@@ -1,0 +1,49 @@
+:root {
+  /* VERA brand palette */
+  --vera-navy: #0B1F3A;
+  --vera-blue: #155EEF;
+  --vera-blue-dark: #1149c0;
+  --vera-green: #12B76A;
+  --vera-green-dark: #0e9257;
+  --vera-soft-white: #F8FAFC;
+  --vera-white: #FFFFFF;
+  --text-primary: #101828;
+  --text-secondary: #667085;
+  --error: #D92D20;
+  --error-soft: #FEF3F2;
+  --success-soft: #ECFDF3;
+
+  /* neutrals / borders */
+  --border: #E4E7EC;
+  --border-strong: #D0D5DD;
+  --surface: #FFFFFF;
+  --surface-alt: #F8FAFC;
+  --overlay: rgba(11, 31, 58, 0.55);
+
+  /* radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* spacing scale */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+  --s-12: 48px; --s-16: 64px;
+
+  /* shadows */
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.06);
+  --shadow-md: 0 4px 12px rgba(16,24,40,.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,40,.12);
+  --shadow-navy: 0 16px 40px rgba(11,31,58,.24);
+
+  /* typography */
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* layout */
+  --sidebar-w: 264px;
+  --header-h: 68px;
+  --mobile-max: 440px;
+}

@@ -1,0 +1,21 @@
+# Render Blueprint for VERA Bank (alternative to Netlify).
+# Deploy: push this repo, then in Render -> "New +" -> "Blueprint" -> pick the repo.
+# This does NOT affect the existing Netlify deployment.
+services:
+  - type: web
+    name: vera-bank
+    runtime: node
+    plan: starter            # a paid instance is required to attach the persistent disk below
+    buildCommand: npm install && npm run build
+    startCommand: node server.mjs
+    healthCheckPath: /healthz
+    autoDeploy: false        # you deploy manually, like your Netlify workflow
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATA_DIR
+        value: /var/data      # shared state is stored here (see the disk below)
+    disk:
+      name: vera-data
+      mountPath: /var/data    # persistent volume -> state survives restarts & redeploys
+      sizeGB: 1

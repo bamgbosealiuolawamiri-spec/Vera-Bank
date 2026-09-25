@@ -1,0 +1,23 @@
+# Netlify deployment config for the VERA Bank demo.
+# The shared simulated backend runs as a Netlify Function backed by Netlify
+# Blobs, so users registered in any browser/device share one state.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# App -> shared backend. Must come BEFORE the SPA catch-all.
+[[redirects]]
+  from = "/api"
+  to = "/.netlify/functions/vera"
+  status = 200
+
+# SPA fallback for any other path.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

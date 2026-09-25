@@ -1,0 +1,27 @@
+{
+  "name": "vera-bank",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "VERA Bank — Banking Made Simple. A fictional banking prototype with a mobile-first app experience and a responsive marketing/banking website, built with React + Vite.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^4.5.3"
+  }
+}
