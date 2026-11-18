@@ -1,0 +1,10 @@
+{
+  "name": "vera-bank-render-wrapper",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "postinstall": "npm --prefix \"../vera-bank (5)\" install",
+    "build": "npm --prefix \"../vera-bank (5)\" run build",
+    "start": "npm --prefix \"../vera-bank (5)\" start"
+  }
+}
