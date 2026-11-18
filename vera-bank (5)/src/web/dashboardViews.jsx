@@ -278,3 +278,75 @@ export function TransactionsView({ refreshKey, onReceipt }) {
     </div>
   )
 }
+
+
+export function AnalyticsView({ refreshKey }) {
+  const { api, user } = useApp()
+  const { data: txns, loading } = useFetch(() => api.getTransactions(user.id), [user.id, refreshKey])
+  const rows = txns || []
+  const now = new Date()
+  const months = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1)
+    const key = date.getMonth() + 1
+    const year = date.getFullYear()
+    const matching = rows.filter((t) => {
+      const d = new Date(t.date)
+      return d.getMonth() + 1 === key && d.getFullYear() === year
+    })
+    return {
+      label: date.toLocaleDateString(undefined, { month: 'short' }),
+      income: matching.filter((t) => t.type === 'credit').reduce((sum, t) => sum + Number(t.amount || 0), 0),
+      spending: matching.filter((t) => t.type === 'debit').reduce((sum, t) => sum + Number(t.amount || 0), 0),
+    }
+  })
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const current = rows.filter((t) => new Date(t.date) >= monthStart && new Date(t.date) <= now)
+  const income = current.filter((t) => t.type === 'credit').reduce((sum, t) => sum + Number(t.amount || 0), 0)
+  const spending = current.filter((t) => t.type === 'debit').reduce((sum, t) => sum + Number(t.amount || 0), 0)
+  const categories = Object.entries(current.filter((t) => t.type === 'debit').reduce((acc, t) => {
+    const key = t.category || 'Other'
+    acc[key] = (acc[key] || 0) + Number(t.amount || 0)
+    return acc
+  }, {})).sort((a, b) => b[1] - a[1])
+  const maxBar = Math.max(1, ...months.flatMap((m) => [m.income, m.spending]))
+  return (
+    <div className="stack gap-6 fade-in">
+      <div className="dash-grid">
+        <Card><small className="muted">Income this month</small><div className="sv text-green"><Money value={income} /></div><small className="muted">Based on recorded credits</small></Card>
+        <Card><small className="muted">Spending this month</small><div className="sv"><Money value={spending} /></div><small className="muted">Based on recorded debits</small></Card>
+        <Card><small className="muted">Net this month</small><div className={income - spending >= 0 ? 'sv text-green' : 'sv text-error'}><Money value={income - spending} /></div><small className="muted">Income minus spending</small></Card>
+      </div>
+      <Card>
+        <div className="card-hd"><h3>Income vs spending</h3><small className="muted">Last 6 months</small></div>
+        {loading ? <Loading rows={4} /> : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,minmax(0,1fr))', gap: 12, alignItems: 'end', minHeight: 190, paddingTop: 18 }}>
+            {months.map((m) => <div key={m.label + m.income} style={{ display: 'grid', gap: 8, justifyItems: 'center' }}>
+              <div style={{ height: 130, width: '100%', display: 'flex', alignItems: 'end', justifyContent: 'center', gap: 4 }}>
+                <div title={'Income: ' + m.income} style={{ width: '35%', minWidth: 8, height: Math.max(3, m.income / maxBar * 120), borderRadius: '5px 5px 0 0', background: 'var(--vera-green)' }} />
+                <div title={'Spending: ' + m.spending} style={{ width: '35%', minWidth: 8, height: Math.max(3, m.spending / maxBar * 120), borderRadius: '5px 5px 0 0', background: 'var(--vera-blue)' }} />
+              </div><small className="muted">{m.label}</small>
+            </div>)}
+          </div>
+        )}
+        <div className="row gap-4" style={{ justifyContent: 'center', marginTop: 14, fontSize: 12 }}>
+          <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: 'var(--vera-green)', marginRight: 6 }} />Income</span>
+          <span><i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: 'var(--vera-blue)', marginRight: 6 }} />Spending</span>
+        </div>
+      </Card>
+      <Card>
+        <div className="card-hd"><h3>Spending by category</h3><small className="muted">This month</small></div>
+        {loading ? <Loading rows={3} /> : categories.length === 0 ? <EmptyState title="No spending recorded">Your category breakdown will appear as you make simulated transactions.</EmptyState> : (
+          <div className="stack gap-3">
+            {categories.map(([name, amount]) => <div key={name}>
+              <div className="spread" style={{ marginBottom: 6 }}><b>{name}</b><b><Money value={amount} /></b></div>
+              <div style={{ height: 8, borderRadius: 20, background: 'var(--surface-alt)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: (amount / Math.max(1, spending) * 100) + '%', background: 'var(--vera-blue)', borderRadius: 20 }} />
+              </div>
+            </div>)}
+          </div>
+        )}
+      </Card>
+      <p className="muted" style={{ fontSize: 12 }}>Analytics are calculated from your VERA simulated transaction history and are not financial advice.</p>
+    </div>
+  )
+}
