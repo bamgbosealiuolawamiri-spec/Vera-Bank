@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "VERA Bank",
+  "short_name": "VERA",
+  "description": "VERA Bank — Banking Made Simple.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1F3A",
+  "theme_color": "#0B1F3A",
+  "icons": [
+    {
+      "src": "/vera-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
