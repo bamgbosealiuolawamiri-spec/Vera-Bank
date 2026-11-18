@@ -6,16 +6,18 @@ import { useApp } from '../context/AppContext.jsx'
 import { useFetch } from './dashboardData.js'
 import { TransferModal, BillPayModal } from '../components/Actions.jsx'
 import { ReceiptModal, ReceiveModal, NotificationsModal, BankTransferModal, RequestMoneyModal, AirtimeDataModal, GiftCardModal, QRPayModal, SavingsModal } from '../components/Services.jsx'
-import { Overview, TransactionsView, CardsView, PaymentsView, SettingsView } from './dashboardViews.jsx'
+import { Overview, TransactionsView, CardsView, PaymentsView, SettingsView, AnalyticsView } from './dashboardViews.jsx'
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: 'home' },
   { id: 'transactions', label: 'Transactions', icon: 'receipt' },
+  { id: 'analytics', label: 'Spending analytics', icon: 'trending' },
+  { id: 'savings', label: 'Savings goals', icon: 'wallet' },
   { id: 'cards', label: 'Cards', icon: 'card' },
   { id: 'payments', label: 'Payments', icon: 'send' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
-const TITLES = { overview: 'Overview', transactions: 'Transactions', cards: 'Your cards', payments: 'Payments', settings: 'Settings' }
+const TITLES = { overview: 'Overview', transactions: 'Transactions', analytics: 'Spending analytics', savings: 'Savings goals', cards: 'Your cards', payments: 'Payments', settings: 'Settings' }
 
 export default function Dashboard() {
   const { user, logout, api, patchUserBalance, toast } = useApp()
@@ -35,7 +37,7 @@ export default function Dashboard() {
   const unread = (notes || []).filter((n) => !n.read).length
 
   const bump = () => setRefreshKey((k) => k + 1)
-  const go = (id) => { setView(id); setDrawer(false) }
+  const go = (id) => { setDrawer(false); if (id === 'savings') { setService('savings'); return }; setView(id) }
   const openService = (id) => setService(id)
   const showReceipt = (txn) => setReceipt(txn)
   async function openNotifs() {
@@ -100,6 +102,7 @@ export default function Dashboard() {
           {view === 'overview' && <Overview refreshKey={refreshKey}
             onTransfer={() => setShowTransfer(true)} onPayBill={() => setShowBill(true)} onAddMoney={handleAddMoney} onReceipt={showReceipt} />}
           {view === 'transactions' && <TransactionsView refreshKey={refreshKey} onReceipt={showReceipt} />}
+          {view === 'analytics' && <AnalyticsView refreshKey={refreshKey} />}
           {view === 'cards' && <CardsView />}
           {view === 'payments' && <PaymentsView onTransfer={() => setShowTransfer(true)} onPayBill={() => setShowBill(true)} onAddMoney={() => setShowAdd(true)} onService={openService} />}
           {view === 'settings' && <SettingsView />}
