@@ -373,8 +373,12 @@ function Pocket({ p, onChange }) {
   async function move(dir) {
     setBusy(dir)
     try {
+      if (!user?.id) throw new Error('Your session has expired. Please sign in again.')
       const res = dir === 'add' ? await api.pocketAdd(user.id, p.id, amt) : await api.pocketWithdraw(user.id, p.id, amt)
-      patchUserBalance(res.balance)
+      if (!res || !Number.isFinite(Number(res.balance)) || !res.pocket) {
+        throw new Error('We could not confirm your updated balance. Refresh the page and sign in again.')
+      }
+      patchUserBalance(Number(res.balance))
       toast({ tone: 'success', message: dir === 'add' ? 'Added to savings.' : 'Moved to balance.' })
       setAmt(''); onChange?.()
     } catch (e) { toast({ tone: 'error', message: e.message }) } finally { setBusy('') }
@@ -410,7 +414,9 @@ export function SavingsModal({ open, onClose, onDone }) {
     if (!name.trim()) return setErr('Give your pocket a name.')
     setLoading(true)
     try {
-      await api.createPocket(user.id, { name, target: Number(target) || 0 })
+      if (!user?.id) throw new Error('Your session has expired. Please sign in again.')
+      const created = await api.createPocket(user.id, { name: name.trim(), target: Number(target) || 0 })
+      if (!created?.id) throw new Error('The pocket could not be confirmed. Please refresh and try again.')
       toast({ tone: 'success', message: 'Savings pocket created.' })
       setName(''); setTarget(''); refresh()
     } catch (e2) { setErr(e2.message) } finally { setLoading(false) }
