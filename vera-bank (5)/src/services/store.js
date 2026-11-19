@@ -5,10 +5,9 @@
 // paid and notified from another — the state is one shared object, not a
 // per-browser copy.
 //
-// When that backend is NOT reachable (e.g. opened from the local file system,
-// static hosting without Functions, or the dev sandbox), we transparently
-// fall back to a per-browser localStorage copy running the SAME engine, so the
-// UI keeps working (single-browser only in that mode).
+// Local development can use a per-browser localStorage fallback. On the live
+// Render site we fail closed instead: silently using localStorage would make
+// different users appear to have separate accounts and break transfers.
 //
 // Only the session (current user id) is kept on-device — it is a token, not the
 // source of truth. All finance is FICTIONAL / SIMULATED.
@@ -41,8 +40,12 @@ function saveLocal(state) {
 }
 const clone = (v) => JSON.parse(JSON.stringify(v))
 
-// Whether we already know the shared backend is unavailable this session, so we
-// stop hammering it with fetches that will only 404 / return index.html.
+// Render production must always use the shared backend. Never silently switch
+// live users to isolated browser storage.
+const requireSharedBackend = typeof window !== 'undefined' &&
+  window.location.hostname.endsWith('.onrender.com')
+
+// Whether we already know the shared backend is unavailable this session.
 let backendDown = false
 
 function runLocal(action, args) {
@@ -52,8 +55,11 @@ function runLocal(action, args) {
   return clone(result)
 }
 
-// Core dispatch: try the shared backend, else fall back to the local engine.
+// Core dispatch: use the shared backend; local fallback is development-only.
 async function request(action, args = {}) {
+  if (requireSharedBackend && backendDown) {
+    throw new Error('VERA shared service is unavailable. Please refresh and try again shortly.')
+  }
   if (!backendDown && typeof fetch === 'function') {
     try {
       const res = await fetch(API_URL, {
@@ -73,8 +79,14 @@ async function request(action, args = {}) {
       throw new Error('unexpected response')
     } catch (err) {
       if (err instanceof DomainError) throw err // real domain error — do not fall back
-      backendDown = true // network/parse/404 — switch to local for this session
+      backendDown = true
+      if (requireSharedBackend) {
+        throw new Error('VERA shared service is unavailable. Please refresh and try again shortly.')
+      }
     }
+  }
+  if (requireSharedBackend) {
+    throw new Error('VERA shared service is unavailable. Please refresh and try again shortly.')
   }
   return runLocal(action, args)
 }
