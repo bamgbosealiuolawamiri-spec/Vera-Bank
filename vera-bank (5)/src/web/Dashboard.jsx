@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Logo, Button, Avatar, Modal, Input } from '../components/ui.jsx'
 import Icon from '../components/Icon.jsx'
@@ -20,7 +20,7 @@ const NAV = [
 const TITLES = { overview: 'Overview', transactions: 'Transactions', analytics: 'Spending analytics', savings: 'Savings goals', cards: 'Your cards', payments: 'Payments', settings: 'Settings' }
 
 export default function Dashboard() {
-  const { user, logout, api, patchUserBalance, toast } = useApp()
+  const { user, logout, api, patchUserBalance, refreshUser, toast } = useApp()
   const nav = useNavigate()
   const [view, setView] = useState('overview')
   const [drawer, setDrawer] = useState(false)
@@ -35,6 +35,21 @@ export default function Dashboard() {
   const { data: bens } = useFetch(() => api.getBeneficiaries(user.id), [user.id])
   const { data: notes, reload: reloadNotes } = useFetch(() => api.getNotifications(user.id), [user.id, refreshKey])
   const unread = (notes || []).filter((n) => !n.read).length
+
+  // Refresh shared account state while the dashboard is open so recipients
+  // see incoming transfers, transaction history and notifications promptly.
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        await refreshUser()
+        setRefreshKey((k) => k + 1)
+      } catch (err) {
+        // Keep the dashboard usable; the next polling cycle will retry.
+      }
+    }, 8000)
+    return () => clearInterval(timer)
+  }, [refreshUser])
 
   const bump = () => setRefreshKey((k) => k + 1)
   const go = (id) => { setDrawer(false); if (id === 'savings') { setService('savings'); return }; setView(id) }
