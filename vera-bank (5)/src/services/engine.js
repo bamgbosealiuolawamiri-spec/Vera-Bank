@@ -268,14 +268,19 @@ export const actions = {
 
   // ---- savings pockets ----
   createPocket(state, { userId, name, target, targetDate }) {
-    if (!name) throw new Error('Give your pocket a name.')
-    const p = { id: uid('pk'), userId, name, target: money2(target || 0), saved: 0, targetDate: targetDate || '', createdAt: new Date().toISOString() }
+    const u = getUser(state, userId)
+    if (!u) throw new Error('Your VERA account could not be found. Please sign in again.')
+    if (!String(name || '').trim()) throw new Error('Give your pocket a name.')
+    const targetAmount = Number(target || 0)
+    if (!Number.isFinite(targetAmount) || targetAmount < 0) throw new Error('Enter a valid savings target.')
+    const p = { id: uid('pk'), userId, name: String(name).trim(), target: money2(targetAmount), saved: 0, targetDate: targetDate || '', createdAt: new Date().toISOString() }
     state.savings.push(p)
     addNote(state, userId, 'success', 'Savings pocket created', `\"${name}\" is ready.`)
     return p
   },
   pocketAdd(state, { userId, pocketId, amount }) {
     const u = getUser(state, userId)
+    if (!u) throw new Error('Your VERA account could not be found. Please sign in again.')
     const p = state.savings.find((x) => x.id === pocketId && x.userId === userId)
     const amt = Number(amount)
     if (!p) throw new Error('Pocket not found.')
@@ -289,6 +294,7 @@ export const actions = {
   },
   pocketWithdraw(state, { userId, pocketId, amount }) {
     const u = getUser(state, userId)
+    if (!u) throw new Error('Your VERA account could not be found. Please sign in again.')
     const p = state.savings.find((x) => x.id === pocketId && x.userId === userId)
     const amt = Number(amount)
     if (!p) throw new Error('Pocket not found.')
