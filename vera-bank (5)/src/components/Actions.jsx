@@ -63,7 +63,7 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
         : { recipient: resolved, method: MODE_META[mode].method, amount, note }
       const res = await api.transfer(user.id, payload)
       patchUserBalance(res.balance)
-      toast({ tone: 'success', title: 'Transfer sent', message: 'Your money is on its way.' })
+      toast({ tone: 'success', title: 'Transfer sent', message: 'Your demo transfer was recorded.' })
       onDone?.(res)
       onReceipt?.(res.transaction)
       reset(); onClose()
