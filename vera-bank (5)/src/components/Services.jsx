@@ -12,6 +12,10 @@ const NG = countryByCode('NG')
 
 export function ReceiptModal({ open, txn, onClose }) {
   const { toast } = useApp()
+  const maskAccount = (value) => {
+    const digits = String(value || '').replace(/\\D/g, '')
+    return digits.length >= 4 ? `•••• ${digits.slice(-4)}` : value
+  }
   if (!txn) return null
   const credit = txn.type === 'credit'
   const rows = [
@@ -19,7 +23,7 @@ export function ReceiptModal({ open, txn, onClose }) {
     ['Category', txn.category],
     txn.method && ['Method', txn.method],
     txn.recipient?.name && ['Recipient', txn.recipient.name],
-    txn.recipient?.accountNumber && ['Account', txn.recipient.accountNumber],
+    txn.recipient?.accountNumber && ['Account', maskAccount(txn.recipient.accountNumber)],
     txn.recipient?.bank && ['Bank', txn.recipient.bank],
     txn.sender?.name && ['From', txn.sender.name],
     txn.meta?.phone && ['Phone', txn.meta.phone],
@@ -63,8 +67,8 @@ export function ReceiveModal({ open, onClose }) {
     ['Username', '@' + user.username, '@' + user.username],
   ]
   return (
-    <Modal open={open} onClose={onClose} title="Receive money">
-      <p className="muted" style={{ textAlign: 'center', marginBottom: 12 }}>Share any of these details to get paid.</p>
+    <Modal open={open} onClose={onClose} title="Demo account details">
+      <p className="muted" style={{ textAlign: 'center', marginBottom: 12 }}>These details are for VERA's simulated environment only. They cannot receive real payments.</p>
       <div className="qr-box" style={{ margin: '0 auto 16px' }}><Icon name="qr" size={120} style={{ color: 'var(--vera-navy)' }} /></div>
       <div className="list-card" style={{ textAlign: 'left' }}>
         {rows.map(([k, v, c]) => (
