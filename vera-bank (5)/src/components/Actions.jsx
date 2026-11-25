@@ -5,6 +5,10 @@ import Icon from './Icon.jsx'
 import { useApp } from '../context/AppContext.jsx'
 
 const QUICK_AMOUNTS = [20, 50, 100, 250]
+const maskAccount = (account = '') => {
+  const value = String(account)
+  return value.length > 4 ? `•••• ${value.slice(-4)}` : value
+}
 const SEND_MODES = [
   { id: 'saved', label: 'Saved' },
   { id: 'account', label: 'Account no.' },
@@ -28,9 +32,12 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
   const [err, setErr] = useState('')
   const [looking, setLooking] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [review, setReview] = useState(false)
 
-  function reset() { setMode('saved'); setBenId(''); setValue(''); setResolved(null); setAmount(''); setNote(''); setErr('') }
-  function switchMode(m) { setMode(m); setBenId(''); setValue(''); setResolved(null); setErr('') }
+  function reset() { setMode('saved'); setBenId(''); setValue(''); setResolved(null); setAmount(''); setNote(''); setErr(''); setReview(false) }
+  function switchMode(m) { setMode(m); setBenId(''); setValue(''); setResolved(null); setErr(''); setReview(false) }
+  const selectedBeneficiary = beneficiaries.find((b) => b.id === benId)
+  const recipient = mode === 'saved' ? selectedBeneficiary : resolved
 
   async function lookup() {
     setErr(''); setResolved(null)
@@ -48,6 +55,7 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
     setErr('')
     if (mode === 'saved' && !benId) return setErr('Choose who to send to.')
     if (mode !== 'saved' && !resolved) return setErr('Look up and confirm the recipient first.')
+    if (!review) { setReview(true); return }
     setLoading(true)
     try {
       const payload = mode === 'saved'
@@ -55,7 +63,7 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
         : { recipient: resolved, method: MODE_META[mode].method, amount, note }
       const res = await api.transfer(user.id, payload)
       patchUserBalance(res.balance)
-      toast({ tone: 'success', title: 'Transfer sent', message: 'Your money is on its way.' })
+      toast({ tone: 'success', title: 'Transfer sent', message: 'Your demo transfer was recorded.' })
       onDone?.(res)
       onReceipt?.(res.transaction)
       reset(); onClose()
@@ -78,11 +86,11 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
             <div className="stack gap-2">
               {beneficiaries.length === 0 && <p className="muted" style={{ fontSize: 13 }}>No saved recipients yet — send by account, email or username instead.</p>}
               {beneficiaries.map((b) => (
-                <button type="button" key={b.id} onClick={() => setBenId(b.id)}
+                <button type="button" key={b.id} onClick={() => { setBenId(b.id); setReview(false) }}
                   className="settings-row" style={{ border: '1px solid var(--border)', borderRadius: 12,
                     outline: benId === b.id ? '2px solid var(--vera-blue)' : 'none' }}>
                   <Avatar name={b.name} />
-                  <div className="s-txt"><b>{b.name}</b><small>{b.bank} · {b.accountNumber}</small></div>
+                  <div className="s-txt"><b>{b.name}</b><small>{b.bank} · {maskAccount(b.accountNumber)}</small></div>
                   {benId === b.id && <Icon name="check" size={18} style={{ color: 'var(--vera-blue)' }} />}
                 </button>
               ))}
@@ -91,31 +99,42 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
         ) : (
           <>
             <Input label={SEND_MODES.find((m) => m.id === mode).label} placeholder={MODE_META[mode].ph}
-              hint={MODE_META[mode].hint} value={value} onChange={(e) => { setValue(e.target.value); setResolved(null) }} />
+              hint={MODE_META[mode].hint} value={value} onChange={(e) => { setValue(e.target.value); setResolved(null); setReview(false) }} />
             {!resolved ? (
               <Button type="button" variant="outline" block loading={looking} onClick={lookup} style={{ marginBottom: 14 }}>
                 <Icon name="search" size={18} /> Look up recipient</Button>
             ) : (
               <div className="settings-row" style={{ border: '1px solid var(--border)', borderRadius: 12, marginBottom: 14 }}>
                 <Avatar name={resolved.name} />
-                <div className="s-txt"><b>{resolved.name}</b><small>{resolved.bank} · {resolved.accountNumber}</small></div>
+                <div className="s-txt"><b>{resolved.name}</b><small>{resolved.bank} · {maskAccount(resolved.accountNumber)}</small></div>
                 <Icon name="check" size={18} style={{ color: 'var(--vera-green)' }} />
               </div>
             )}
           </>
         )}
+        {review && recipient && (
+          <div className="settings-row" style={{ border: '1px solid var(--vera-blue)', borderRadius: 12, padding: 14, marginBottom: 14, display: 'block' }}>
+            <b>Review demo transfer</b>
+            <p style={{ margin: '8px 0 4px' }}>Recipient: {recipient.name}</p>
+            <p className="muted" style={{ margin: '0 0 4px', fontSize: 13 }}>{recipient.bank} · {maskAccount(recipient.accountNumber)}</p>
+            <p style={{ margin: '4px 0' }}>Amount: <Money value={amount || 0} /></p>
+            {note && <p className="muted" style={{ margin: '4px 0', fontSize: 13 }}>Note: {note}</p>}
+            <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>Demo only — no real money will be sent.</p>
+          </div>
+        )}
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount}
-          onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
+          onChange={(e) => { setAmount(e.target.value); setReview(false) }} lead={<b>$</b>} />
         <div className="chip-row" style={{ marginTop: -6, marginBottom: 14 }}>
           {QUICK_AMOUNTS.map((a) => (
-            <button type="button" className="chip" key={a} onClick={() => setAmount(String(a))}>${a}</button>
+            <button type="button" className="chip" key={a} onClick={() => { setAmount(String(a)); setReview(false) }}>${a}</button>
           ))}
         </div>
-        <Input label="Note (optional)" placeholder="What's it for?" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Input label="Note (optional)" placeholder="What's it for?" value={note} onChange={(e) => { setNote(e.target.value); setReview(false) }} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
           Available balance: <Money value={user?.balance} className="text-blue" />
         </p>
-        <Button type="submit" block size="lg" loading={loading}>Send{amount ? <> <Money value={amount} /></> : ''}</Button>
+        <Button type="submit" block size="lg" loading={loading}>{review ? 'Confirm demo transfer' : 'Review transfer'}</Button>
+        {review && <Button type="button" variant="outline" block onClick={() => setReview(false)} style={{ marginTop: 8 }}>Edit details</Button>}
       </form>
     </Modal>
   )

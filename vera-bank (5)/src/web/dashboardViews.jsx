@@ -52,13 +52,17 @@ export function Overview({ onTransfer, onPayBill, onAddMoney, onReceipt, refresh
 
   return (
     <div className="stack gap-6 fade-in">
+      <div role="note" aria-label="Simulation notice" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '14px 16px', borderRadius: 14, border: '1px solid #c9d9ff', background: '#f2f6ff', color: '#17356b' }}>
+        <Icon name="shield" size={20} />
+        <div><b style={{ display: 'block', marginBottom: 3 }}>VERA demo wallet</b><span style={{ fontSize: 13, lineHeight: 1.5 }}>This is a simulated experience. Balances, cards, payments and transfers shown here have no cash value and are not connected to real banks or payment networks.</span></div>
+      </div>
       <div className="dash-grid">
         <div className="big-balance">
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <span style={{ color: '#cdd9f2', fontSize: 14 }}>Total balance</span>
+            <span style={{ color: '#cdd9f2', fontSize: 14 }}>Demo wallet balance</span>
             <div className="amt"><Money value={user.balance} /></div>
             <div className="meta">
-              <div><small>Account number</small><b>{user.accountNumber}</b></div>
+              <div><small>Demo account number</small><b>{user.accountNumber}</b></div>
               <div><small>Account holder</small><b>{user.name}</b></div>
             </div>
           </div>
@@ -160,7 +164,11 @@ export function PaymentsView({ onTransfer, onPayBill, onAddMoney, onService }) {
     { i: 'arrowDownLeft', t: 'Receive money', d: 'Share your QR and account details.', on: () => onService('receive'), c: 'qi-blue' },
   ]
   return (
-    <div className="dash-grid-3 fade-in">
+    <div className="stack gap-4 fade-in">
+      <div role="note" style={{ padding: '12px 15px', borderRadius: 12, background: '#fff8e8', border: '1px solid #f2dfb5', color: '#70521a', fontSize: 13 }}>
+        Demo mode only — these actions do not move real money or connect to external banks, billers or merchants.
+      </div>
+      <div className="dash-grid-3">
       {items.map((a) => (
         <Card key={a.t} className="stack gap-4">
           <span className={`ai ${a.c}`} style={{ width: 52, height: 52, borderRadius: 14, display: 'grid', placeItems: 'center' }}>
@@ -169,6 +177,7 @@ export function PaymentsView({ onTransfer, onPayBill, onAddMoney, onService }) {
           <Button onClick={a.on}>{a.t}</Button>
         </Card>
       ))}
+      </div>
     </div>
   )
 }
