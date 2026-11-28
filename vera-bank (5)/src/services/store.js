@@ -65,6 +65,7 @@ async function request(action, args = {}) {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ action, args }),
       })
       // Static hosting without Functions typically returns index.html (200,
@@ -99,7 +100,7 @@ export const api = {
   // ---- auth ----
   async login(email, password) {
     const user = await request('login', { email, password })
-    setSession(user.id)
+    if (!requireSharedBackend) setSession(user.id)
     return user
   },
   async register(form) {
@@ -107,12 +108,17 @@ export const api = {
     setSession(user.id)
     return user
   },
-  logout() { setSession(null) },
+  logout() {
+    setSession(null)
+    if (requireSharedBackend && typeof fetch === 'function') {
+      fetch(API_URL, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'logout', args: {} }) }).catch(() => {})
+    }
+  },
   currentUserId() { return getSession() },
   async me() {
     const id = getSession()
-    if (!id) return null
-    const user = await request('me', { userId: id })
+    if (!requireSharedBackend && !id) return null
+    const user = await request('me', requireSharedBackend ? {} : { userId: id })
     if (!user) setSession(null)
     return user
   },
