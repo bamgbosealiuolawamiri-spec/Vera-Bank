@@ -13,7 +13,7 @@ const NG = countryByCode('NG')
 export function ReceiptModal({ open, txn, onClose }) {
   const { toast } = useApp()
   const maskAccount = (value) => {
-    const digits = String(value || '').replace(/\\D/g, '')
+    const digits = String(value || '').replace(/\D/g, '')
     return digits.length >= 4 ? `•••• ${digits.slice(-4)}` : value
   }
   if (!txn) return null
@@ -140,7 +140,7 @@ export function BankTransferModal({ open, onClose, onDone, onReceipt }) {
         <Input label="Account name (optional)" placeholder="Recipient name" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
         <Input label="Note (optional)" placeholder="What's it for?" value={note} onChange={(e) => setNote(e.target.value)} />
-        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Send transfer</Button>
       </form>
@@ -279,7 +279,7 @@ export function AirtimeDataModal({ open, onClose, onDone, onReceipt }) {
             </div>
           </div>
         )}
-        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, margin: '6px 0 14px' }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Buy {tab === 'airtime' ? 'airtime' : 'data'}</Button>
       </form>
@@ -329,7 +329,7 @@ export function GiftCardModal({ open, onClose, onDone, onReceipt }) {
             ))}
           </div>
         </div>
-        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, margin: '10px 0 14px' }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Buy{amount ? <> <Money value={amount} /></> : ''}</Button>
       </form>
@@ -368,7 +368,7 @@ export function QRPayModal({ open, onClose, onDone, onReceipt }) {
       <form onSubmit={submit}>
         <ErrorBanner>{err}</ErrorBanner>
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
-        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Pay {merchant.split(' ')[0]}</Button>
       </form>
@@ -406,7 +406,7 @@ function Pocket({ p, onChange }) {
       <div className="row gap-2" style={{ alignItems: 'center' }}>
         <div style={{ flex: 1 }}><Input placeholder="0.00" type="number" min="0" step="0.01" value={amt} onChange={(e) => setAmt(e.target.value)} lead={<b>$</b>} /></div>
       </div>
-      <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} />
+      <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
       <div className="row gap-2">
         <Button variant="green" block loading={busy === 'add'} onClick={() => move('add')}><Icon name="plus" size={16} /> Add</Button>
         <Button variant="outline" block loading={busy === 'wd'} onClick={() => move('wd')}>Withdraw</Button>
