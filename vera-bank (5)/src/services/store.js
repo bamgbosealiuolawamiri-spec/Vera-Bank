@@ -71,7 +71,6 @@ async function request(action, args = {}) {
       // Static hosting without Functions typically returns index.html (200,
       // text/html) or a 404 — either way JSON parsing/handling below fails and
       // we drop to the local fallback for the rest of the session.
-      if (!res.ok && res.status !== 200) throw new Error('backend unavailable')
       const ctype = res.headers.get('content-type') || ''
       if (!ctype.includes('application/json')) throw new Error('backend not json')
       const data = await res.json()
@@ -105,7 +104,7 @@ export const api = {
   },
   async register(form) {
     const user = await request('register', { name: form.name, email: form.email, password: form.password, phone: form.phone, country: form.country })
-    setSession(user.id)
+    if (!requireSharedBackend) setSession(user.id)
     return user
   },
   logout() {
