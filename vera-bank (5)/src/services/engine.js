@@ -20,7 +20,7 @@ function fmtDate(iso) {
     ', ' + dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }
 export function withLabel(t) { return { ...t, dateLabel: fmtDate(t.date) } }
-function sanitize(u) { const { password, ...rest } = u; return rest }
+function sanitize(u) { const { password, passwordHash, ...rest } = u; return rest }
 function getUser(state, userId) { return state.users.find((x) => x.id === userId) }
 
 // Ensure forward-compatible collections exist on a loaded/blob state.
@@ -260,7 +260,7 @@ export const actions = {
   updateProfile(state, { userId, ...patch }) {
     const u = getUser(state, userId)
     // Never allow id/password/balance/accountNumber to be overwritten here.
-    delete patch.id; delete patch.password; delete patch.balance
+    delete patch.id; delete patch.password; delete patch.passwordHash; delete patch.balance
     delete patch.accountNumber; delete patch.currency
     Object.assign(u, patch)
     return sanitize(u)
