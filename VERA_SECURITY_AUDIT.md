@@ -49,3 +49,22 @@ Before implementing and releasing the milestone, resolve:
 5. Regression coverage for existing account state and transfers.
 
 Passkeys/WebAuthn are a separate follow-up phase after the session and PIN foundations are complete.
+
+
+## Work completed on `feature/secure-transfer-auth`
+
+- Added server-generated random session tokens in an HttpOnly, SameSite=Lax cookie; the browser no longer stores the shared-wallet user ID as its authentication credential.
+- Protected API actions now require a live server-side session and the backend overrides any browser-supplied `userId` with the identity bound to that session.
+- Added logout revocation and a 12-hour rolling session expiry. Sessions are held in process memory, so a server restart signs users out.
+- Added same-origin validation when an Origin header is present.
+- Added salted scrypt password hashes for new registrations. Existing plaintext passwords are upgraded to hashes after a successful login.
+- Removed password hashes from sanitized account responses and blocked profile updates from overwriting credential fields.
+- Updated the shared-wallet client to use same-origin cookies and to handle expired sessions.
+
+## Not yet complete / not yet verified
+
+- Transaction PIN setup, PIN verification and server-side transfer authorization are not implemented yet.
+- Passkeys / Face ID / fingerprint are not implemented.
+- Login attempt throttling and a full CSRF test suite are still required.
+- No build, automated security test, or live Render test has been run for these commits yet. Do not treat this branch as release-ready.
+- The mobile-style local demo flow is still separate and has not been migrated to the shared authenticated backend.
