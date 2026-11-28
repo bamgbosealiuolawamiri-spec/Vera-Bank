@@ -46,6 +46,23 @@ function persist() {
   writing = writing.then(() => saveState(state))
   return writing
 }
+function hashPassword(password, salt = crypto.randomBytes(16)) {
+  const digest = crypto.scryptSync(String(password), salt, 64)
+  return salt.toString('base64') + ':' + digest.toString('base64')
+}
+function verifyPassword(password, stored) {
+  try {
+    const [saltText, digestText] = String(stored).split(':')
+    const salt = Buffer.from(saltText, 'base64')
+    const expected = Buffer.from(digestText, 'base64')
+    const actual = crypto.scryptSync(String(password), salt, expected.length)
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual)
+  } catch { return false }
+}
+function publicUser(user) {
+  const { password, passwordHash, ...safe } = user
+  return safe
+}
 function sendJson(res, body, status = 200, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers })
   res.end(JSON.stringify(body))
@@ -86,11 +103,35 @@ async function handleApi(req, res) {
       return sendJson(res, { ok: false, error: 'Invalid action request.' }, 400)
     try {
       if (action === 'login' || action === 'register') {
-        const { result, mutating } = runAction(state, action, args)
-        if (mutating) await persist()
+        let user
+        if (action === 'register') {
+          const password = String(args.password || '')
+          if (password.length < 8 || password.length > 256) throw new Error('Choose a password with at least 8 characters.')
+          const placeholder = crypto.randomBytes(32).toString('hex')
+          const { result } = runAction(state, 'register', { ...args, password: placeholder })
+          user = state.users.find(u => u.id === result.id)
+          user.passwordHash = hashPassword(password)
+          delete user.password
+          await persist()
+        } else {
+          const email = String(args.email || '').trim().toLowerCase()
+          const password = String(args.password || '')
+          user = state.users.find(u => String(u.email || '').toLowerCase() === email)
+          if (!user) throw new Error('Invalid email or password.')
+          const valid = user.passwordHash
+            ? verifyPassword(password, user.passwordHash)
+            : user.password === password
+          if (!valid) throw new Error('Invalid email or password.')
+          // Upgrade legacy plaintext credentials on successful sign-in.
+          if (!user.passwordHash) {
+            user.passwordHash = hashPassword(password)
+            delete user.password
+            await persist()
+          }
+        }
         const token = crypto.randomBytes(32).toString('base64url')
-        sessions.set(token, { userId: result.id, expiresAt: Date.now() + SESSION_TTL_MS })
-        return sendJson(res, { ok: true, result }, 200, { 'set-cookie': cookieHeader(req, token) })
+        sessions.set(token, { userId: user.id, expiresAt: Date.now() + SESSION_TTL_MS })
+        return sendJson(res, { ok: true, result: publicUser(user) }, 200, { 'set-cookie': cookieHeader(req, token) })
       }
       if (action === 'logout') {
         const current = sessionFor(req)
