@@ -147,7 +147,7 @@ async function handleApi(req, res) {
 
       if (action === 'setPin') {
         const pin = String(args.pin || '')
-        if (!/^\\d{6}$/.test(pin) || /^(\\d)\\1{5}$/.test(pin) || ['123456','654321','012345','987654'].includes(pin))
+        if (!/^\d{6}$/.test(pin) || /^(\d)\1{5}$/.test(pin) || ['123456','654321','012345','987654'].includes(pin))
           throw new Error('Choose a six-digit PIN that is not an obvious sequence or repeated number.')
         authenticatedUser.pinHash = hashPassword(pin)
         await persist()
