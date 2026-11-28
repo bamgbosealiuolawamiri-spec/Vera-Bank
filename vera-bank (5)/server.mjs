@@ -15,6 +15,8 @@ const HOST = process.env.HOST || '0.0.0.0'
 const SESSION_COOKIE = 'vera_session'
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000
 const sessions = new Map()
+const pinFailures = new Map()
+const PIN_PROTECTED_ACTIONS = new Set(['transfer', 'bankTransfer', 'payBill', 'buyAirtime', 'buyData', 'buyGiftCard', 'pocketAdd', 'pocketWithdraw'])
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -60,8 +62,8 @@ function verifyPassword(password, stored) {
   } catch { return false }
 }
 function publicUser(user) {
-  const { password, passwordHash, ...safe } = user
-  return safe
+  const { password, passwordHash, pinHash, ...safe } = user
+  return { ...safe, pinConfigured: Boolean(pinHash) }
 }
 function sendJson(res, body, status = 200, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers })
@@ -140,9 +142,38 @@ async function handleApi(req, res) {
       }
       const current = sessionFor(req)
       if (!current) return sendJson(res, { ok: false, error: 'Please sign in again to continue.' }, 401)
+      const authenticatedUser = state.users.find(u => u.id === current.userId)
+      if (!authenticatedUser) return sendJson(res, { ok: false, error: 'Account not found. Please sign in again.' }, 401)
+
+      if (action === 'setPin') {
+        const pin = String(args.pin || '')
+        if (!/^\\d{6}$/.test(pin) || /^(\\d)\\1{5}$/.test(pin) || ['123456','654321','012345','987654'].includes(pin))
+          throw new Error('Choose a six-digit PIN that is not an obvious sequence or repeated number.')
+        authenticatedUser.pinHash = hashPassword(pin)
+        await persist()
+        return sendJson(res, { ok: true, result: { pinConfigured: true } })
+      }
+
+      // Every action that reduces available or savings balance is verified
+      // server-side. PIN values are never passed into the engine or persisted.
+      if (PIN_PROTECTED_ACTIONS.has(action)) {
+        const pin = String(args.pin || '')
+        const failureKey = current.userId
+        const failure = pinFailures.get(failureKey) || { count: 0, lockedUntil: 0 }
+        if (failure.lockedUntil > Date.now()) throw new Error('PIN verification is temporarily locked. Please try again later.')
+        if (!authenticatedUser.pinHash) throw new Error('Set up your six-digit transaction PIN in Settings before making payments.')
+        if (!verifyPassword(pin, authenticatedUser.pinHash)) {
+          failure.count += 1
+          if (failure.count >= 5) { failure.count = 0; failure.lockedUntil = Date.now() + 10 * 60 * 1000 }
+          pinFailures.set(failureKey, failure)
+          throw new Error(failure.lockedUntil ? 'Too many incorrect PIN attempts. Try again in 10 minutes.' : 'Incorrect transaction PIN.')
+        }
+        pinFailures.delete(failureKey)
+      }
       // Never trust userId supplied by the browser. Bind every action to the
       // authenticated server-side session identity.
-      const safeArgs = { ...args, userId: current.userId }
+      const { pin: _discardedPin, ...cleanArgs } = args
+      const safeArgs = { ...cleanArgs, userId: current.userId }
       const { result, mutating } = runAction(state, action, safeArgs)
       if (mutating) await persist()
       return sendJson(res, { ok: true, result })
