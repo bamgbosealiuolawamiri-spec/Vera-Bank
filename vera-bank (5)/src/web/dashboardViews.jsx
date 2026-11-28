@@ -198,7 +198,7 @@ export function SettingsView() {
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   async function savePin(e) {
     e.preventDefault()
-    if (!/^\\d{6}$/.test(pin)) { toast({ tone: 'error', message: 'Enter a six-digit PIN.' }); return }
+    if (!/^\d{6}$/.test(pin)) { toast({ tone: 'error', message: 'Enter a six-digit PIN.' }); return }
     setPinSaving(true)
     try { await api.setPin(pin); setPin(''); await refreshUser(); toast({ tone: 'success', message: 'Transaction PIN saved securely.' }) }
     catch (err) { toast({ tone: 'error', message: err.message }) }
@@ -247,7 +247,7 @@ export function SettingsView() {
         <form onSubmit={savePin} className="stack gap-2" style={{ marginBottom: 18 }}>
           <b>Transaction PIN</b>
           <p className="muted" style={{ fontSize: 13 }}>{user.pinConfigured ? 'A transaction PIN is set. You can replace it after verifying your account in a future security update.' : 'Set a six-digit PIN. VERA will require it before simulated transfers and payments.'}</p>
-          {!user.pinConfigured && <><Input label="Create six-digit PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="new-password" value={pin} onChange={(e) => setPin(e.target.value.replace(/\\D/g, '').slice(0, 6))} /><Button type="submit" loading={pinSaving}>Set transaction PIN</Button></>}
+          {!user.pinConfigured && <><Input label="Create six-digit PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="new-password" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} /><Button type="submit" loading={pinSaving}>Set transaction PIN</Button></>}
           {user.pinConfigured && <Badge tone="green">PIN protection enabled</Badge>}
         </form>
         <div className="stack gap-3">
