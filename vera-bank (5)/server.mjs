@@ -146,6 +146,7 @@ async function handleApi(req, res) {
       if (!authenticatedUser) return sendJson(res, { ok: false, error: 'Account not found. Please sign in again.' }, 401)
 
       if (action === 'setPin') {
+        if (authenticatedUser.pinHash) throw new Error('A transaction PIN is already set. Changing it requires current-PIN verification, which is not enabled yet.')
         const pin = String(args.pin || '')
         if (!/^\d{6}$/.test(pin) || /^(\d)\1{5}$/.test(pin) || ['123456','654321','012345','987654'].includes(pin))
           throw new Error('Choose a six-digit PIN that is not an obvious sequence or repeated number.')
