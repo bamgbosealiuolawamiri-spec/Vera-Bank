@@ -127,6 +127,8 @@ export const api = {
     }
   },
 
+  async setPin(pin) { return request('setPin', { pin }) },
+
   // ---- reads ----
   getBalance(userId) { return request('getBalance', { userId }) },
   getTransactions(userId) { return request('getTransactions', { userId }) },
@@ -152,6 +154,6 @@ export const api = {
   deposit(userId, amount, method) { return request('deposit', { userId, amount, method }) },
   updateProfile(userId, patch) { return request('updateProfile', { userId, ...patch }) },
   createPocket(userId, opts) { return request('createPocket', { userId, ...opts }) },
-  pocketAdd(userId, pocketId, amount) { return request('pocketAdd', { userId, pocketId, amount }) },
-  pocketWithdraw(userId, pocketId, amount) { return request('pocketWithdraw', { userId, pocketId, amount }) },
+  pocketAdd(userId, pocketId, amount, pin) { return request('pocketAdd', { userId, pocketId, amount, pin }) },
+  pocketWithdraw(userId, pocketId, amount, pin) { return request('pocketWithdraw', { userId, pocketId, amount, pin }) },
 }
