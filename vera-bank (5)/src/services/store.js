@@ -117,9 +117,14 @@ export const api = {
   async me() {
     const id = getSession()
     if (!requireSharedBackend && !id) return null
-    const user = await request('me', requireSharedBackend ? {} : { userId: id })
-    if (!user) setSession(null)
-    return user
+    try {
+      const user = await request('me', requireSharedBackend ? {} : { userId: id })
+      if (!user) setSession(null)
+      return user
+    } catch (err) {
+      if (requireSharedBackend && /sign in again/i.test(err.message || '')) return null
+      throw err
+    }
   },
 
   // ---- reads ----
