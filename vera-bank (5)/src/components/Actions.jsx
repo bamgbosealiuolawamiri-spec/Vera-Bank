@@ -29,12 +29,13 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
   const [resolved, setResolved] = useState(null)
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [looking, setLooking] = useState(false)
   const [loading, setLoading] = useState(false)
   const [review, setReview] = useState(false)
 
-  function reset() { setMode('saved'); setBenId(''); setValue(''); setResolved(null); setAmount(''); setNote(''); setErr(''); setReview(false) }
+  function reset() { setMode('saved'); setBenId(''); setValue(''); setResolved(null); setAmount(''); setNote(''); setPin(''); setErr(''); setReview(false) }
   function switchMode(m) { setMode(m); setBenId(''); setValue(''); setResolved(null); setErr(''); setReview(false) }
   const selectedBeneficiary = beneficiaries.find((b) => b.id === benId)
   const recipient = mode === 'saved' ? selectedBeneficiary : resolved
@@ -59,8 +60,8 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
     setLoading(true)
     try {
       const payload = mode === 'saved'
-        ? { beneficiaryId: benId, amount, note, method: 'Saved recipient' }
-        : { recipient: resolved, method: MODE_META[mode].method, amount, note }
+        ? { beneficiaryId: benId, amount, note, method: 'Saved recipient', pin }
+        : { recipient: resolved, method: MODE_META[mode].method, amount, note, pin }
       const res = await api.transfer(user.id, payload)
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: 'Transfer sent', message: 'Your demo transfer was recorded.' })
@@ -130,6 +131,7 @@ export function TransferModal({ open, onClose, beneficiaries = [], onDone, onRec
           ))}
         </div>
         <Input label="Note (optional)" placeholder="What's it for?" value={note} onChange={(e) => { setNote(e.target.value); setReview(false) }} />
+        {review && <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} hint="Required to confirm this simulated transfer." />}
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
           Available balance: <Money value={user?.balance} className="text-blue" />
         </p>
@@ -151,13 +153,14 @@ export function BillPayModal({ open, onClose, onDone, onReceipt }) {
   const { api, user, patchUserBalance, toast } = useApp()
   const [biller, setBiller] = useState(BILLERS[0])
   const [amount, setAmount] = useState('')
+  const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function submit(e) {
     e.preventDefault(); setErr(''); setLoading(true)
     try {
-      const res = await api.payBill(user.id, { biller: `${biller.name} bill`, amount, category: biller.cat })
+      const res = await api.payBill(user.id, { biller: biller.name + ' bill', amount, category: biller.cat, pin })
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: 'Bill paid', message: `${biller.name} payment successful.` })
       onDone?.(res); onReceipt?.(res.transaction); setAmount(''); onClose()
@@ -179,6 +182,7 @@ export function BillPayModal({ open, onClose, onDone, onReceipt }) {
         </div>
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount}
           onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
           Available balance: <Money value={user?.balance} className="text-blue" />
         </p>

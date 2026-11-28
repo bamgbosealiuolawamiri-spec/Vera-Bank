@@ -65,12 +65,12 @@ async function request(action, args = {}) {
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ action, args }),
       })
       // Static hosting without Functions typically returns index.html (200,
       // text/html) or a 404 — either way JSON parsing/handling below fails and
       // we drop to the local fallback for the rest of the session.
-      if (!res.ok && res.status !== 200) throw new Error('backend unavailable')
       const ctype = res.headers.get('content-type') || ''
       if (!ctype.includes('application/json')) throw new Error('backend not json')
       const data = await res.json()
@@ -99,23 +99,35 @@ export const api = {
   // ---- auth ----
   async login(email, password) {
     const user = await request('login', { email, password })
-    setSession(user.id)
+    if (!requireSharedBackend) setSession(user.id)
     return user
   },
   async register(form) {
     const user = await request('register', { name: form.name, email: form.email, password: form.password, phone: form.phone, country: form.country })
-    setSession(user.id)
+    if (!requireSharedBackend) setSession(user.id)
     return user
   },
-  logout() { setSession(null) },
+  logout() {
+    setSession(null)
+    if (requireSharedBackend && typeof fetch === 'function') {
+      fetch(API_URL, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'logout', args: {} }) }).catch(() => {})
+    }
+  },
   currentUserId() { return getSession() },
   async me() {
     const id = getSession()
-    if (!id) return null
-    const user = await request('me', { userId: id })
-    if (!user) setSession(null)
-    return user
+    if (!requireSharedBackend && !id) return null
+    try {
+      const user = await request('me', requireSharedBackend ? {} : { userId: id })
+      if (!user) setSession(null)
+      return user
+    } catch (err) {
+      if (requireSharedBackend && /sign in again/i.test(err.message || '')) return null
+      throw err
+    }
   },
+
+  async setPin(pin) { return request('setPin', { pin }) },
 
   // ---- reads ----
   getBalance(userId) { return request('getBalance', { userId }) },
@@ -142,6 +154,6 @@ export const api = {
   deposit(userId, amount, method) { return request('deposit', { userId, amount, method }) },
   updateProfile(userId, patch) { return request('updateProfile', { userId, ...patch }) },
   createPocket(userId, opts) { return request('createPocket', { userId, ...opts }) },
-  pocketAdd(userId, pocketId, amount) { return request('pocketAdd', { userId, pocketId, amount }) },
-  pocketWithdraw(userId, pocketId, amount) { return request('pocketWithdraw', { userId, pocketId, amount }) },
+  pocketAdd(userId, pocketId, amount, pin) { return request('pocketAdd', { userId, pocketId, amount, pin }) },
+  pocketWithdraw(userId, pocketId, amount, pin) { return request('pocketWithdraw', { userId, pocketId, amount, pin }) },
 }

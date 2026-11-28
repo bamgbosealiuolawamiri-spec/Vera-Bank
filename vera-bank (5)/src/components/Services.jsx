@@ -13,7 +13,7 @@ const NG = countryByCode('NG')
 export function ReceiptModal({ open, txn, onClose }) {
   const { toast } = useApp()
   const maskAccount = (value) => {
-    const digits = String(value || '').replace(/\\D/g, '')
+    const digits = String(value || '').replace(/\D/g, '')
     return digits.length >= 4 ? `•••• ${digits.slice(-4)}` : value
   }
   if (!txn) return null
@@ -109,13 +109,14 @@ export function BankTransferModal({ open, onClose, onDone, onReceipt }) {
   const [accountName, setAccountName] = useState('')
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
+  const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function submit(e) {
     e.preventDefault(); setErr(''); setLoading(true)
     try {
-      const res = await api.bankTransfer(user.id, { bank, accountNumber, accountName, amount, note })
+      const res = await api.bankTransfer(user.id, { bank, accountNumber, accountName, amount, note, pin })
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: 'Transfer sent', message: `Sent to ${bank}.` })
       onDone?.(res); onReceipt?.(res.transaction)
@@ -139,6 +140,7 @@ export function BankTransferModal({ open, onClose, onDone, onReceipt }) {
         <Input label="Account name (optional)" placeholder="Recipient name" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
         <Input label="Note (optional)" placeholder="What's it for?" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Send transfer</Button>
       </form>
@@ -216,6 +218,7 @@ export function AirtimeDataModal({ open, onClose, onDone, onReceipt }) {
   const [network, setNetwork] = useState(NG_NETWORKS[0])
   const [phone, setPhone] = useState('')
   const [amount, setAmount] = useState('')
+  const [pin, setPin] = useState('')
   const [bundle, setBundle] = useState(null)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
@@ -226,8 +229,8 @@ export function AirtimeDataModal({ open, onClose, onDone, onReceipt }) {
       const pr = validatePhone(NG, phone)
       if (!pr.ok) { setErr(pr.error); setLoading(false); return }
       const res = tab === 'airtime'
-        ? await api.buyAirtime(user.id, { network: network.name, phone: pr.e164, amount })
-        : await api.buyData(user.id, { network: network.name, phone: pr.e164, bundleLabel: bundle?.label, amount: bundle?.amount })
+        ? await api.buyAirtime(user.id, { network: network.name, phone: pr.e164, amount, pin })
+        : await api.buyData(user.id, { network: network.name, phone: pr.e164, bundleLabel: bundle?.label, amount: bundle?.amount, pin })
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: tab === 'airtime' ? 'Airtime sent' : 'Data sent', message: `${network.name} · ${pr.e164}` })
       onDone?.(res); onReceipt?.(res.transaction)
@@ -276,6 +279,7 @@ export function AirtimeDataModal({ open, onClose, onDone, onReceipt }) {
             </div>
           </div>
         )}
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, margin: '6px 0 14px' }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Buy {tab === 'airtime' ? 'airtime' : 'data'}</Button>
       </form>
@@ -287,6 +291,7 @@ export function GiftCardModal({ open, onClose, onDone, onReceipt }) {
   const { api, user, patchUserBalance, toast } = useApp()
   const [brand, setBrand] = useState(GIFT_CARDS[0])
   const [amount, setAmount] = useState('')
+  const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -295,7 +300,7 @@ export function GiftCardModal({ open, onClose, onDone, onReceipt }) {
     if (!amount) return setErr('Choose a card amount.')
     setLoading(true)
     try {
-      const res = await api.buyGiftCard(user.id, { brand: brand.name, amount })
+      const res = await api.buyGiftCard(user.id, { brand: brand.name, amount, pin })
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: 'Gift card purchased', message: `Code: ${res.code}` })
       onDone?.(res); onReceipt?.(res.transaction)
@@ -324,6 +329,7 @@ export function GiftCardModal({ open, onClose, onDone, onReceipt }) {
             ))}
           </div>
         </div>
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, margin: '10px 0 14px' }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Buy{amount ? <> <Money value={amount} /></> : ''}</Button>
       </form>
@@ -336,13 +342,14 @@ export function QRPayModal({ open, onClose, onDone, onReceipt }) {
   const { api, user, patchUserBalance, toast } = useApp()
   const [merchant] = useState(() => QR_MERCHANTS[Math.floor(Math.random() * QR_MERCHANTS.length)])
   const [amount, setAmount] = useState('')
+  const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function submit(e) {
     e.preventDefault(); setErr(''); setLoading(true)
     try {
-      const res = await api.transfer(user.id, { recipient: { name: merchant, accountNumber: 'QR · ' + merchant, bank: 'VERA Bank' }, method: 'QR code', amount })
+      const res = await api.transfer(user.id, { recipient: { name: merchant, accountNumber: 'QR · ' + merchant, bank: 'VERA Bank' }, method: 'QR code', amount, pin })
       patchUserBalance(res.balance)
       toast({ tone: 'success', title: 'Payment sent', message: `Paid ${merchant}.` })
       onDone?.(res); onReceipt?.(res.transaction)
@@ -361,6 +368,7 @@ export function QRPayModal({ open, onClose, onDone, onReceipt }) {
       <form onSubmit={submit}>
         <ErrorBanner>{err}</ErrorBanner>
         <Input label="Amount" type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} lead={<b>$</b>} />
+        <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>Available balance: <Money value={user?.balance} className="text-blue" /></p>
         <Button type="submit" block size="lg" loading={loading}>Pay {merchant.split(' ')[0]}</Button>
       </form>
@@ -372,19 +380,20 @@ export function QRPayModal({ open, onClose, onDone, onReceipt }) {
 function Pocket({ p, onChange }) {
   const { api, user, patchUserBalance, toast } = useApp()
   const [amt, setAmt] = useState('')
+  const [pin, setPin] = useState('')
   const [busy, setBusy] = useState('')
   const pct = p.target > 0 ? Math.min(100, Math.round((p.saved / p.target) * 100)) : 0
   async function move(dir) {
     setBusy(dir)
     try {
       if (!user?.id) throw new Error('Your session has expired. Please sign in again.')
-      const res = dir === 'add' ? await api.pocketAdd(user.id, p.id, amt) : await api.pocketWithdraw(user.id, p.id, amt)
+      const res = dir === 'add' ? await api.pocketAdd(user.id, p.id, amt, pin) : await api.pocketWithdraw(user.id, p.id, amt, pin)
       if (!res || !Number.isFinite(Number(res.balance)) || !res.pocket) {
         throw new Error('We could not confirm your updated balance. Refresh the page and sign in again.')
       }
       patchUserBalance(Number(res.balance))
       toast({ tone: 'success', message: dir === 'add' ? 'Added to savings.' : 'Moved to balance.' })
-      setAmt(''); onChange?.()
+      setAmt(''); setPin(''); onChange?.()
     } catch (e) { toast({ tone: 'error', message: e.message }) } finally { setBusy('') }
   }
   return (
@@ -397,6 +406,7 @@ function Pocket({ p, onChange }) {
       <div className="row gap-2" style={{ alignItems: 'center' }}>
         <div style={{ flex: 1 }}><Input placeholder="0.00" type="number" min="0" step="0.01" value={amt} onChange={(e) => setAmt(e.target.value)} lead={<b>$</b>} /></div>
       </div>
+      <Input label="Six-digit transaction PIN" type="password" inputMode="numeric" maxLength="6" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
       <div className="row gap-2">
         <Button variant="green" block loading={busy === 'add'} onClick={() => move('add')}><Icon name="plus" size={16} /> Add</Button>
         <Button variant="outline" block loading={busy === 'wd'} onClick={() => move('wd')}>Withdraw</Button>
